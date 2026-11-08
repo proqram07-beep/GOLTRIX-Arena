@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOLTRIX Arena</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: var(--tg-theme-bg-color, #0f172a);
+      --text-color: var(--tg-theme-text-color, #f8fafc);
+      --btn-color: var(--tg-theme-button-color, #22c55e);
+      --btn-text-color: var(--tg-theme-button-text-color, #ffffff);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button.opt-btn {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.opt-btn:active {
+      background-color: var(--btn-color);
+      color: var(--btn-text-color);
+    }
+    .score-badge {
+      font-weight: bold;
+      color: #eab308;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Profil & Balans -->
+  <div class="header">
+    <div id="user-info">Oyunçu: ...</div>
+    <div class="score-badge">⚽ Xal: <span id="score">0</span></div>
+  </div>
+
+  <!-- Oyun Kartı -->
+  <div class="card">
+    <h3 id="question-title">Karyera Trivia</h3>
+    <p id="career-path">Yüklənir...</p>
+    
+    <div class="options-grid" id="options">
+      <!-- Düymələr JS tərəfindən doldurulacaq -->
+    </div>
+  </div>
+
+  <script>
+    // 1. Telegram WebApp obyektini başlatmaq
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Tətbiqi tam ekrana yayır
+
+    // İstifadəçi məlumatlarını almaq
+    const user = tg.initDataUnsafe?.user;
+    document.getElementById('user-info').innerText = user ? `⚽ ${user.first_name}` : '⚽ Qonaq';
+
+    // Oyun Vəziyyəti (State)
+    let score = 0;
+    const questions = [
+      {
+        path: "Sporting CP ➔ Manchester United ➔ Real Madrid ➔ Juventus ➔ Al Nassr",
+        options: ["Cristiano Ronaldo", "Lionel Messi", "Neymar", "Karim Benzema"],
+        answer: "Cristiano Ronaldo"
+      },
+      {
+        path: "Santos ➔ Barcelona ➔ PSG ➔ Al Hilal",
+        options: ["Ronaldinho", "Neymar", "Vinicius Jr", "Kaká"],
+        answer: "Neymar"
+      }
+    ];
+    let currentIndex = 0;
+
+    function loadQuestion() {
+      if (currentIndex >= questions.length) {
+        document.getElementById('question-title').innerText = "Təbriklər! 🎉";
+        document.getElementById('career-path').innerText = `Yekun xalınız: ${score}`;
+        document.getElementById('options').innerHTML = '';
+        
+        // Telegram-ın əsas düyməsini göstərmək (MainButton)
+        tg.MainButton.setText("BAĞLA VƏ REKORDU SAXLA");
+        tg.MainButton.show();
+        tg.MainButton.onClick(() => tg.close());
+        return;
+      }
+
+      const q = questions[currentIndex];
+      document.getElementById('career-path').innerText = q.path;
+      
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+      
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt, q.answer);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected, correct) {
+      if (selected === correct) {
+        score += 100;
+        document.getElementById('score').innerText = score;
+        tg.HapticFeedback.notificationOccurred('success'); // Vibrasiya effekti
+      } else {
+        tg.HapticFeedback.notificationOccurred('error');
+      }
+      currentIndex++;
+      loadQuestion();
+    }
+
+    // Oyunu başlatmaq
+    loadQuestion();
+  </script>
+</body>
+</html>
